@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chọn công việc</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Nội dung thêm dữ liệu (nếu chưa có dữ liệu trong database) -->
+  <h3>📌 Chọn dữ liệu cần thêm:</h3>
+  <div class="d-flex align-items-center">
+    <div class="select-container">
+      <div class="select-header">
+        <input type="checkbox" id="select-all">
+        <label for="select-all">Chọn tất cả</label>
+      </div>
+      <label for="type-select">Chọn TYPE:</label>
+      <select id="type-select" multiple>
+        <option value="LAU BÀN GHẾ">LAU BÀN GHẾ</option>
+        <option value="LAU VĂN PHÒNG">LAU VĂN PHÒNG</option>
+        <option value="XỊT KHUẨN NHÀ VỆ SINH">XỊT KHUẨN NHÀ VỆ SINH</option>
+        <option value="DỌN DẸP THÙNG CARTON">DỌN DẸP THÙNG CARTON</option>
+        <option value="LAU CỬA KÍNH">LAU CỬA KÍNH</option>
+        <option value="QUÉT, LAU LINE KỆ">QUÉT, LAU LINE KỆ</option>
+        <option value="MÁY NƯỚC NÓNG">MÁY NƯỚC NÓNG</option>
+        <option value="LAU TỦ ĐÔNG, MÁT">LAU TỦ ĐÔNG, MÁT</option>
+        <option value="LAU, XỊT KHUẨN PHÒNG NGHỈ">LAU, XỊT KHUẨN PHÒNG NGHỈ</option>
+        <option value="LAU, XỊT KHUẨN PHÒNG HỌP">LAU, XỊT KHUẨN PHÒNG HỌP</option>
+        <option value="LAU, XỊT KHUẨN BÀN GHẾ NHÀ ĂN">LAU, XỊT KHUẨN BÀN GHẾ NHÀ ĂN</option>
+        <option value="VỆ SINH MÁY PHOTO">VỆ SINH MÁY PHOTO</option>
+        <option value="other">CÔNG VIỆC KHÁC</option>
+      </select>
+      <div id="custom-name-container" style="display: none;">
+        <label for="custom-name">Nhập công việc khác:</label>
+        <input type="text" id="custom-name" placeholder="Nhập tên công việc...">
+      </div>
+    </div>
+  </div>
+  <div class="select-container">
+    <label for="name-select">Chọn NAME:</label>
+    <select id="name-select">
+      <option value="KHO">KHO</option>
+      <option value="VANPHONG">VANPHONG</option>
+    </select>
+  </div>
+  <button id="insert-btn">➕ Thêm dữ liệu</button>
+  <button id="refresh-btn">🔄 Làm mới trang</button>
+  <script>
+    document.getElementById("refresh-btn").addEventListener("click", function () {
+      location.reload();
+    });
+  </script>
+  <!-- Import thư viện SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <button id="export-btn">📄 Xuất Excel</button>
+  ...
+  <script src="export.js"></script> 
+  <script src="insert.js"></script> 
+  <script>
+    // Xóa flag disableAutoTransfer ngay khi truy cập index.html,
+    // giúp kích hoạt lại tính năng auto chuyển trang.
+    sessionStorage.removeItem("disableAutoTransfer");
+  </script>  
+  <script src="transfer.js"></script> 
+
+</body>
+</html>

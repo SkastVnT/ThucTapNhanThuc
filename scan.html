@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <title>Scan QR Code</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        #calendar-container-insert {
+            margin: 20px auto;
+            max-width: 300px;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:enabled:hover {
+            background-color: #0056b3;
+        }
+    </style> -->
+</head>
+<body>
+    <div id="loader" style="display: none;">Đang tải dữ liệu...</div>
+    <div style="margin: 10px 0;">
+        <label for="filter-name">Lọc theo khu vực:</label>
+        <select id="filter-name">
+          <option value="all">Hiện thị tất cả</option>
+          <option value="KHO CHÍNH">KHO CHÍNH</option>
+          <option value="XUNG QUANH">XUNG QUANH</option>
+          <option value="VĂN PHÒNG">VĂN PHÒNG</option>
+          <option value="KHO ĐÔNG">KHO ĐÔNG</option>
+          <option value="WC">WC</option>
+          <option value="DV VỆ SINH">DV VỆ SINH</option>
+          <option value="DV BAO VE">DV BAO VE</option>
+        </select>
+      </div>
+      
+    <div class="task-container">
+        <div id="checklist-container"></div>
+        <div id="task-list">
+            <!-- Danh sách công việc sẽ được thêm vào đây bằng JavaScript -->
+        </div>
+    </div>
+    
+     <!-- Nơi hiển thị checklist -->
+    
+    <!-- <div id="reader" style="width: 300px; height: 300px;"></div> -->
+    <!-- <button id="scan-btn">Bắt đầu quét</button> -->
+    <button id="rescan-btn" style="display: none;">Quét lại</button>
+
+   <!-- Các phần khác của scan.html ... -->
+   <!-- <button id="back-btn">⬅ Quay lại</button> -->
+   <script>
+     document.getElementById("back-btn").addEventListener("click", function () {
+         // Tạm thời tắt auto chuyển hướng cho phiên làm việc hiện tại
+         sessionStorage.setItem("disableAutoTransfer", "true");
+         window.location.href = "index.html";
+     });
+   </script>
+   
+
+    <button id="refresh-btn">🔄 Làm mới trang</button>
+
+    <script>
+        document.getElementById("refresh-btn").addEventListener("click", function () {
+            location.reload(); // Làm mới trang
+        });
+    </script>
+    <h3>🗑️ Xóa Mục:</h3>
+    <select id="delete-select">
+        <option value="">-- Chọn mục để xóa --</option>
+    </select>
+    <button id="delete-btn" disabled>❌ Xóa</button>
+    
+
+    <div id="reader"></div>
+    <div id="checklist-container"></div>
+    <button id="export-all-btn">📄 Xuất Excel</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script src="script.js"></script>
+    <!-- Phần này được thêm vào scan.html để cho phép người dùng insert "CÔNG VIỆC KHÁC" -->
+    <div id="insert-panel" style="margin: 20px; padding: 10px; border: 1px solid #ccc;">
+        <h3>Thêm công việc khác:</h3>
+        <div class="insert-form">
+          <label for="custom-job">Nhập công việc khác:</label>
+          <input type="text" id="custom-job" placeholder="Nhập tên công việc khác" style="margin-bottom:10px;" />
+          <br />
+          <label for="name-select">Chọn khu vực muốn thêm:</label>
+          <select id="name-select">
+            <option value="KHO CHÍNH">KHO CHÍNH</option>
+            <option value="XUNG QUANH">XUNG QUANH</option>
+            <option value="VĂN PHÒNG">VĂN PHÒNG</option>
+            <option value="KHO ĐÔNG">KHO ĐÔNG</option>
+            <option value="WC">WC</option>
+            <option value="DV VỆ SINH">DV VỆ SINH</option>
+            <option value="DV BAO VE">DV BAO VE</option>
+            <option value="other">CÔNG VIỆC KHÁC</option>
+          </select>
+          <br />
+          <!-- Container cho nhập tên nếu chọn "other" -->
+          <div id="custom-name-container" style="display: none; margin-top:10px;">
+            <label for="custom-name">Nhập CÔNG VIỆC KHÁC:</label>
+            <input type="text" id="custom-name" placeholder="Nhập tên công việc khác" />
+          </div>
+          <br />
+          <button id="insert-other-btn">➕ Thêm dữ liệu</button>
+        </div>
+      </div>
+    
+      <!-- Script xử lý sự kiện thêm dữ liệu -->
+      <script>
+        // Hàm lấy mốc thời gian theo định dạng "YYYY-MM-DD HH:00:00"
+        function getThresholdTimestamp() {
+          const now = new Date();
+          const currentHour = now.getHours();
+          let targetHour;
+          if (currentHour < 13) {
+            targetHour = 10;
+          } else if (currentHour < 16) {
+            targetHour = 13;
+          } else {
+            targetHour = 16;
+          }
+          const year = now.getFullYear();
+          const month = ("0" + (now.getMonth() + 1)).slice(-2);
+          const day = ("0" + now.getDate()).slice(-2);
+          return `${year}-${month}-${day} ${("0" + targetHour).slice(-2)}:00:00`;
+        }
+    
+        // Hàm lấy timestamp hiện tại theo định dạng "YYYY-MM-DD HH:MM:SS"
+        function getCurrentTimestamp() {
+          const now = new Date();
+          const year = now.getFullYear();
+          const month = ("0" + (now.getMonth() + 1)).slice(-2);
+          const day = ("0" + now.getDate()).slice(-2);
+          const hour = ("0" + now.getHours()).slice(-2);
+          const minute = ("0" + now.getMinutes()).slice(-2);
+          const second = ("0" + now.getSeconds()).slice(-2);
+          return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+        }
+    
+        document.addEventListener("DOMContentLoaded", function () {
+          const insertBtn = document.getElementById("insert-other-btn");
+          const nameSelect = document.getElementById("name-select");
+    
+          // Khi thay đổi giá trị của select, hiển thị hộp nhập nếu chọn "other"
+          nameSelect.addEventListener("change", function () {
+            const customNameContainer = document.getElementById("custom-name-container");
+            if (this.value === "other") {
+              customNameContainer.style.display = "block";
+            } else {
+              customNameContainer.style.display = "none";
+            }
+          });
+    
+          insertBtn.addEventListener("click", function () {
+            const customJob = document.getElementById("custom-job").value.trim();
+            if (!customJob) {
+              alert("Vui lòng nhập công việc khác!");
+              return;
+            }
+            let name = nameSelect.value;
+            if (name === "other") {
+              const customName = document.getElementById("custom-name").value.trim();
+              if (!customName) {
+                alert("Vui lòng nhập tên khu vực cho công việc khác!");
+                return;
+              }
+              name = customName;
+            }
+            const timestamp = getThresholdTimestamp();
+            const nowTimestamp = getCurrentTimestamp();
+            const id = Math.floor(100000 + Math.random() * 900000);
+            const code = `${name}-${customJob}`;
+    
+            console.log("Đang thêm dữ liệu:", { id, name, type: customJob, today: timestamp, code, createdAt: nowTimestamp, updatedAt: nowTimestamp });
+    
+            fetch("api/insert.php", {
+              method: "POST",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: new URLSearchParams({
+                id,
+                name,
+                type: customJob,
+                today: timestamp,
+                code,
+                createdAt: nowTimestamp,
+                updatedAt: nowTimestamp
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                alert("Thêm dữ liệu thành công!");
+                location.reload();
+              } else {
+                alert("Lỗi khi thêm dữ liệu: " + data.error);
+              }
+            })
+            .catch(error => {
+              console.error("Lỗi khi gửi request:", error);
+              alert("Có lỗi xảy ra. Vui lòng thử lại sau.");
+            });
+          });
+        });
+      </script>
+
+<script src="delete.js"></script> <!-- Thêm file xử lý xóa -->
+<!-- Nút xuất tất cả dữ liệu -->
+<!-- <button id="export-all-btn">📄 Export Tất Cả</button> -->
+
+<script>
+    document.getElementById("export-all-btn").addEventListener("click", async function () {
+      console.log("📄 Đang tải dữ liệu tất cả để xuất Excel...");
+      try {
+        const response = await fetch("api/export.php");
+        if (!response.ok) throw new Error(`Lỗi HTTP: ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          alert("❌ Không có dữ liệu để xuất.");
+          return;
+        }
+        console.log("✅ Dữ liệu nhận được:", data);
+  
+        const desiredOrder = ["id", "NAME", "TYPE", "TODAY", "createdAt", "updatedAt", "STATUS"];
+        const formattedData = data.map(row => ({
+          id: row.id,
+          NAME: row.NAME,
+          TYPE: row.TYPE,
+          TODAY: row.TODAY,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          STATUS: row.STATUS
+        }));
+  
+        const headers = [
+          "id",
+          "Khu vực",
+          "Công việc",
+          "Dự kiến",
+          "Danh sách đã được tạo",
+          "Thời gian kiểm tra",
+          "Trạng thái"
+        ];
+  
+        const rows = formattedData.map(row =>
+          desiredOrder.map(key => row[key] !== undefined ? row[key] : "")
+        );
+  
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  
+        const range = XLSX.utils.decode_range(ws["!ref"]);
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const colLetter = XLSX.utils.encode_col(C);
+          for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cellAddress = colLetter + XLSX.utils.encode_row(R);
+            if (ws[cellAddress] && ws[cellAddress].t) {
+              ws[cellAddress].s = { alignment: { horizontal: "left" } };
+            }
+          }
+        }
+  
+        ws["!cols"] = headers.map((header, i) => {
+          const colWidth = Math.max(header.length, ...rows.map(r => r[i].toString().length)) + 2;
+          return { wch: colWidth };
+        });
+  
+        XLSX.utils.book_append_sheet(wb, ws, "Toàn Bộ Dữ Liệu");
+        XLSX.writeFile(wb, `DanhSachToanBo.xlsx`);
+  
+        alert("✅ Xuất Excel thành công!");
+      } catch (error) {
+        console.error("❌ Lỗi khi tải dữ liệu:", error);
+        alert("❌ Lỗi khi xuất dữ liệu, vui lòng thử lại.");
+      }
+    });
+  </script>
+
+</body>
+</html>
